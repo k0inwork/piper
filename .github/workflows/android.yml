@@ -29,7 +29,7 @@ jobs:
         with:
           api-level: 30
           target: google_apis
-          arch: aarch64
+          arch: arm64-v8a
           profile: Nexus 6
           # Using adb to securely pull the generated WAV binary from the emulator after tests complete
           script: |
