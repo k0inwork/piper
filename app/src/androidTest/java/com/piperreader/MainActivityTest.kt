@@ -9,6 +9,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.hamcrest.CoreMatchers.containsString
+import android.os.Environment
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -35,9 +36,9 @@ class MainActivityTest {
         // Check success message
         onView(withId(R.id.textView)).check(matches(withText(containsString("Success! Audio saved to"))))
 
-        // Get context to verify file existence
-        val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
-        val outputFile = File(targetContext.cacheDir, "output.wav")
+        // Verify the file was created in the public Downloads directory
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val outputFile = File(downloadsDir, "output.wav")
 
         // Ensure file actually exists
         assertTrue("Output WAV file was not created", outputFile.exists())

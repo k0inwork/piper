@@ -1,6 +1,7 @@
 package com.piperreader
 
 import android.os.Bundle
+import android.os.Environment
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -46,8 +47,9 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Output file in cache directory
-        val outputFile = File(cacheDir, "output.wav")
+        // Output file in public Downloads directory so it survives test uninstalls
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val outputFile = File(downloadsDir, "output.wav")
 
         val success = PiperTTS.synthesizeToFile(textToRead, outputFile.absolutePath)
 
