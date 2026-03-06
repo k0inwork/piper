@@ -29,12 +29,13 @@ jobs:
         with:
           api-level: 30
           target: google_apis
-          arch: x86_64
+          arch: aarch64
           profile: Nexus 6
-          # Using adb to pull the generated WAV file from the emulator's cache directory after tests complete
+          # Using adb to securely pull the generated WAV binary from the emulator after tests complete
           script: |
             ./gradlew connectedCheck
-            adb shell "run-as com.piperreader cat /data/user/0/com.piperreader/cache/output.wav" > output.wav || echo "Failed to retrieve output.wav"
+            adb shell "run-as com.piperreader cp /data/user/0/com.piperreader/cache/output.wav /sdcard/output.wav" || echo "Failed to copy output.wav to sdcard"
+            adb pull /sdcard/output.wav output.wav || echo "Failed to pull output.wav from emulator"
 
       - name: Upload TTS Audio Artifact
         uses: actions/upload-artifact@v4
