@@ -39,7 +39,7 @@ jobs:
           profile: Nexus 6
           # Using adb to securely pull the generated WAV binary from the emulator after tests complete
           script: |
-            ./gradlew connectedCheck
+            ./gradlew connectedCheck -Pandroid.keepTestApp=true
             adb shell "run-as com.piperreader cp /data/user/0/com.piperreader/cache/output.wav /sdcard/output.wav" || echo "Failed to copy output.wav to sdcard"
             adb pull /sdcard/output.wav output.wav || echo "Failed to pull output.wav from emulator"
 
