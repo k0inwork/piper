@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         sbSentenceSilence = findViewById(R.id.sbSentenceSilence)
 
         setupUI()
+        copyAssetsToInternalStorage()
 
         btnLoadText.setOnClickListener {
             loadText()
@@ -53,6 +54,31 @@ class MainActivity : AppCompatActivity() {
 
         btnTtsToFile.setOnClickListener {
             ttsToFile()
+        }
+    }
+
+    private fun copyAssetsToInternalStorage() {
+        try {
+            val assetsPath = "piper_voices"
+            val destDir = File(filesDir, assetsPath)
+            if (!destDir.exists()) {
+                destDir.mkdirs()
+            }
+
+            val files = assets.list(assetsPath) ?: return
+            for (filename in files) {
+                val outFile = File(destDir, filename)
+                if (!outFile.exists()) {
+                    assets.open("$assetsPath/$filename").use { inStream ->
+                        outFile.outputStream().use { outStream ->
+                            inStream.copyTo(outStream)
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Failed to copy voice models", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -102,10 +128,16 @@ class MainActivity : AppCompatActivity() {
         val sentenceSilence = sbSentenceSilence.progress / 100f
 
         // Initialize Piper with the selected voice model
-        // In a real app, these paths would point to the extracted ONNX files in internal storage
-        val modelPath = "piper_voices/ru_RU-${selectedVoice.lowercase()}-medium.onnx"
-        val configPath = "$modelPath.json"
-        PiperTTS.initPiper(modelPath, configPath)
+        val internalVoicesDir = File(filesDir, "piper_voices")
+        val modelFile = File(internalVoicesDir, "ru_RU-${selectedVoice.lowercase()}-medium.onnx")
+        val configFile = File(internalVoicesDir, "ru_RU-${selectedVoice.lowercase()}-medium.onnx.json")
+
+        if (!modelFile.exists()) {
+            Toast.makeText(this, "Model for $selectedVoice not found locally.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        PiperTTS.initPiper(modelFile.absolutePath, configFile.absolutePath)
 
         // Output file in public Downloads directory so it survives test uninstalls
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)

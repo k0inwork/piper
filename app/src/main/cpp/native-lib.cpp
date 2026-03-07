@@ -1,46 +1,23 @@
 #include <jni.h>
 #include <string>
 #include <android/log.h>
+#include <fstream>
+#include <optional>
 
 #define LOG_TAG "PiperJNI"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-// Hypothetical structs that represent the real libpiper C++ API
-namespace piper {
-    struct SynthesisConfig {
-        float lengthScale = 1.0f;
-        float noiseScale = 0.667f;
-        float noiseW = 0.8f;
-        float sentenceSilenceSeconds = 0.2f;
-    };
-
-    struct PiperConfig {
-        std::string modelPath;
-        std::string modelConfigPath;
-    };
-
-    class PiperSystem {
-    public:
-        bool loadModel(const std::string& model, const std::string& config) {
-            LOGI("Loading Piper model from: %s", model.c_str());
-            // Real implementation would load the ONNX session here
-            return true;
-        }
-
-        bool synthesize(const std::string& text, const std::string& outputPath, const SynthesisConfig& config) {
-            LOGI("Synthesizing text: '%s'", text.c_str());
-            LOGI("Output: %s", outputPath.c_str());
-            LOGI("Config: speed=%.2f, noise=%.2f, noiseW=%.2f, silence=%.2f",
-                 config.lengthScale, config.noiseScale, config.noiseW, config.sentenceSilenceSeconds);
-            // Real implementation would pass this config to the piper::textToAudioFile function
-            return true;
-        }
-    };
-}
+#ifdef USE_REAL_PIPER
+#include "piper/piper.hpp"
+#endif
 
 // Global instance to hold the Piper session
-static piper::PiperSystem g_piperSystem;
+#ifdef USE_REAL_PIPER
+static std::optional<piper::PiperConfig> g_piperConfig;
+static std::optional<piper::Voice> g_voice;
+static bool g_initialized = false;
+#endif
 
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_piperreader_PiperTTS_initPiperNative(
@@ -58,8 +35,29 @@ Java_com_piperreader_PiperTTS_initPiperNative(
     env->ReleaseStringUTFChars(jModelPath, modelPathCStr);
     env->ReleaseStringUTFChars(jConfigPath, configPathCStr);
 
-    bool success = g_piperSystem.loadModel(modelPath, configPath);
-    return success ? JNI_TRUE : JNI_FALSE;
+#ifdef USE_REAL_PIPER
+    try {
+        if (!g_initialized) {
+            g_piperConfig.emplace();
+            // Need to set eSpeakDataPath if espeak-ng is used
+            g_piperConfig->useESpeak = true;
+            piper::initialize(*g_piperConfig);
+            g_initialized = true;
+        }
+
+        g_voice.emplace();
+        std::optional<piper::SpeakerId> speakerId;
+        piper::loadVoice(*g_piperConfig, modelPath, configPath, *g_voice, speakerId, false);
+        LOGI("Successfully loaded voice from %s", modelPath.c_str());
+        return JNI_TRUE;
+    } catch (const std::exception& e) {
+        LOGE("Failed to load Piper model: %s", e.what());
+        return JNI_FALSE;
+    }
+#else
+    LOGI("MOCK: Loading Piper model from: %s", modelPath.c_str());
+    return JNI_TRUE;
+#endif
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -82,27 +80,51 @@ Java_com_piperreader_PiperTTS_synthesizeToFileNative(
     env->ReleaseStringUTFChars(jText, textCStr);
     env->ReleaseStringUTFChars(jOutputPath, outputPathCStr);
 
-    piper::SynthesisConfig config;
-    config.lengthScale = lengthScale;
-    config.noiseScale = noiseScale;
-    config.noiseW = noiseW;
-    config.sentenceSilenceSeconds = sentenceSilence;
-
-    bool success = g_piperSystem.synthesize(text, outputPath, config);
-
-    // If we wanted to actually write a mock file from C++ for tests when real libpiper isn't linked:
-    if (success) {
-        FILE* f = fopen(outputPath.c_str(), "w");
-        if (f) {
-            fprintf(f, "NATIVE C++ MOCK WAV AUDIO DATA FOR: %s\n", text.c_str());
-            fprintf(f, "Settings:\nLength Scale: %.3f\nNoise Scale: %.3f\nNoise W: %.3f\nSentence Silence: %.3f\n",
-                    lengthScale, noiseScale, noiseW, sentenceSilence);
-            fclose(f);
-        } else {
-            LOGE("Failed to write to %s", outputPath.c_str());
-            return JNI_FALSE;
-        }
+#ifdef USE_REAL_PIPER
+    if (!g_voice || !g_piperConfig) {
+        LOGE("Piper model not loaded!");
+        return JNI_FALSE;
     }
 
-    return success ? JNI_TRUE : JNI_FALSE;
+    try {
+        g_voice->synthesisConfig.lengthScale = lengthScale;
+        g_voice->synthesisConfig.noiseScale = noiseScale;
+        g_voice->synthesisConfig.noiseW = noiseW;
+        g_voice->synthesisConfig.sentenceSilenceSeconds = sentenceSilence;
+
+        std::ofstream audioFile(outputPath, std::ios::binary);
+        if (!audioFile.is_open()) {
+            LOGE("Failed to open output file: %s", outputPath.c_str());
+            return JNI_FALSE;
+        }
+
+        piper::SynthesisResult result;
+        piper::textToWavFile(*g_piperConfig, *g_voice, text, audioFile, result);
+
+        LOGI("Synthesis complete: infer=%.2fs, audio=%.2fs, rtf=%.2f",
+             result.inferSeconds, result.audioSeconds, result.realTimeFactor);
+
+        return JNI_TRUE;
+    } catch (const std::exception& e) {
+        LOGE("Synthesis failed: %s", e.what());
+        return JNI_FALSE;
+    }
+#else
+    LOGI("Synthesizing text: '%s'", text.c_str());
+    LOGI("Output: %s", outputPath.c_str());
+    LOGI("Config: speed=%.2f, noise=%.2f, noiseW=%.2f, silence=%.2f",
+            lengthScale, noiseScale, noiseW, sentenceSilence);
+
+    FILE* f = fopen(outputPath.c_str(), "w");
+    if (f) {
+        fprintf(f, "NATIVE C++ MOCK WAV AUDIO DATA FOR: %s\n", text.c_str());
+        fprintf(f, "Settings:\nLength Scale: %.3f\nNoise Scale: %.3f\nNoise W: %.3f\nSentence Silence: %.3f\n",
+                lengthScale, noiseScale, noiseW, sentenceSilence);
+        fclose(f);
+        return JNI_TRUE;
+    } else {
+        LOGE("Failed to write to %s", outputPath.c_str());
+        return JNI_FALSE;
+    }
+#endif
 }
