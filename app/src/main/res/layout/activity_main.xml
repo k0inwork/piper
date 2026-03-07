@@ -7,35 +7,103 @@
     android:padding="16dp"
     tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginBottom="16dp"
-        android:text="Text will load here..."
-        app:layout_constraintBottom_toTopOf="@+id/btnLoadText"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/btnLoadText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Load Text"
-        app:layout_constraintBottom_toTopOf="@+id/btnTtsToFile"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-    <Button
-        android:id="@+id/btnTtsToFile"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="TTS to File"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="Text will load here..."
+                android:minLines="5" />
+
+            <Button
+                android:id="@+id/btnLoadText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="Load Text" />
+
+            <!-- Piper TTS Settings -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Voice Selection"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"/>
+            <Spinner
+                android:id="@+id/spinnerVoice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tvLengthScale"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Speed (length_scale): 1.0"/>
+            <SeekBar
+                android:id="@+id/sbLengthScale"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="200"
+                android:progress="100"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tvNoiseScale"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Noise (noise_scale): 0.667"/>
+            <SeekBar
+                android:id="@+id/sbNoiseScale"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="66"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tvNoiseW"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Duration Variance (noise_w): 0.8"/>
+            <SeekBar
+                android:id="@+id/sbNoiseW"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="80"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tvSentenceSilence"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pause (sentence_silence): 0.2"/>
+            <SeekBar
+                android:id="@+id/sbSentenceSilence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="200"
+                android:progress="20"
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:id="@+id/btnTtsToFile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="TTS to File" />
+
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
