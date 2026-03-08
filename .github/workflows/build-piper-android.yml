@@ -41,16 +41,13 @@ jobs:
 
           export ANDROID_NDK=${{ steps.setup-ndk.outputs.ndk-path }}
 
-          cd piper1-gpl
-          
-          # Remove the root CMakeLists.txt so it doesn't try to build the python wrapper and fail on Python requirements
-          rm CMakeLists.txt || true
+          cd piper1-gpl/libpiper
           
           mkdir -p build_android && cd build_android
 
           # Attempt to configure CMake for Android arm64-v8a cross-compilation
           # Note: A complete build usually requires espeak-ng compiled for Android as well.
-          cmake -S ../libpiper -B . -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
                 -DANDROID_ABI=arm64-v8a \
                 -DANDROID_PLATFORM=android-26 \
                 -DCMAKE_BUILD_TYPE=Release \
@@ -65,8 +62,6 @@ jobs:
           # If libpiper.so was successfully built, rename it for artifact upload
           if [ -f "libpiper.so" ]; then
               cp libpiper.so libpiper_android.so
-          elif [ -f "libpiper/libpiper.so" ]; then
-              cp libpiper/libpiper.so libpiper_android.so
           else
               echo "Compilation failed or libpiper.so not found. Creating a dummy file to keep workflow passing for now while diagnosing."
               echo "DUMMY LIBPIPER SO" > libpiper_android.so
@@ -81,4 +76,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: libpiper-android-arm64
-          path: piper1-gpl/build_android/libpiper_android.so
+          path: piper1-gpl/libpiper/build_android/libpiper_android.so
