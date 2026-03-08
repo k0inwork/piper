@@ -51,7 +51,7 @@ jobs:
                 -DBUILD_TESTING=OFF \
                 -DPIPER_PHONEMIZE_ESPEAK=OFF \
                 -DPIPER_PHONEMIZE_ONNX=OFF \
-                ..
+                ../libpiper
 
           # We run make but allow failure for now, capturing what we can.
           # In a real scenario we'd need a robust espeak-ng cross-compilation step first.
