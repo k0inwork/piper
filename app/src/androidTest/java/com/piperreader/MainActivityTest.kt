@@ -36,8 +36,9 @@ class MainActivityTest {
         // Check success message
         onView(withId(R.id.textView)).check(matches(withText(containsString("Success! Audio saved to"))))
 
-        // Verify the file was created in the public Downloads directory
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        // Verify the file was created in the app's external files directory
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val downloadsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
         val outputFile = File(downloadsDir, "output.wav")
 
         // Ensure file actually exists
