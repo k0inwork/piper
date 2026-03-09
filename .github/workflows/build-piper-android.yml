@@ -26,7 +26,7 @@ jobs:
 
       - name: Download Precompiled ONNX Runtime for Android
         run: |
-          wget https://github.com/microsoft/onnxruntime/releases/download/v1.17.1/onnxruntime-android-1.17.1.aar
+          wget https://repo1.maven.org/maven2/com/microsoft/onnxruntime/onnxruntime-android/1.17.1/onnxruntime-android-1.17.1.aar
           unzip onnxruntime-android-1.17.1.aar -d onnxruntime-android
           mkdir -p piper1-gpl/lib
           cp onnxruntime-android/jni/arm64-v8a/libonnxruntime.so piper1-gpl/lib/
@@ -37,25 +37,30 @@ jobs:
           #!/bin/bash
           set -e
 
+          sudo apt-get update && sudo apt-get install -y python3-dev
+
           export ANDROID_NDK=${{ steps.setup-ndk.outputs.ndk-path }}
 
-          cd piper1-gpl
+          cd piper1-gpl/libpiper
+
+          # Patch CMakeLists.txt to pass Android NDK to espeak-ng and fix linking
+          sed -i '/-DEXTRA_ru:BOOL=ON/a \        -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake\n        -DANDROID_ABI=arm64-v8a\n        -DANDROID_PLATFORM=android-26' CMakeLists.txt
+          
           mkdir -p build_android && cd build_android
 
           # Attempt to configure CMake for Android arm64-v8a cross-compilation
           # Note: A complete build usually requires espeak-ng compiled for Android as well.
-          cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
                 -DANDROID_ABI=arm64-v8a \
                 -DANDROID_PLATFORM=android-26 \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DBUILD_TESTING=OFF \
                 -DPIPER_PHONEMIZE_ESPEAK=OFF \
-                -DPIPER_PHONEMIZE_ONNX=OFF \
-                ..
+                -DPIPER_PHONEMIZE_ONNX=OFF
 
           # We run make but allow failure for now, capturing what we can.
           # In a real scenario we'd need a robust espeak-ng cross-compilation step first.
-          make -j4 || true
+          make -j4
 
           # If libpiper.so was successfully built, rename it for artifact upload
           if [ -f "libpiper.so" ]; then
@@ -74,4 +79,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: libpiper-android-arm64
-          path: piper1-gpl/build_android/libpiper_android.so
+          path: piper1-gpl/libpiper/build_android/libpiper_android.so
