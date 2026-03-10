@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
         PiperTTS.initPiper(modelFile.absolutePath, configFile.absolutePath)
 
         // Output file in public Downloads directory so it survives test uninstalls
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val downloadsDir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
         val outputFile = File(downloadsDir, "output.wav")
 
         val success = PiperTTS.synthesizeToFile(
