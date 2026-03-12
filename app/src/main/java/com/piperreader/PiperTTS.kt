@@ -51,17 +51,10 @@ object PiperTTS {
             synthesizeToFileNative(text, outputPath, lengthScale, noiseScale, noiseW, sentenceSilence)
         } catch (e: UnsatisfiedLinkError) {
             // MOCK IMPLEMENTATION FOR UI TEST / MISSING NATIVE LIB
-            Log.w("PiperTTS", "Calling mock synthesizeToFile because native method is missing.")
+            Log.w("PiperTTS", "Calling mock synthesizeToFile because native method is missing.", e)
             try {
                 val file = java.io.File(outputPath)
-                val mockContent = """
-                    MOCK WAV AUDIO DATA FOR: $text
-                    Settings used:
-                    Length Scale: $lengthScale
-                    Noise Scale: $noiseScale
-                    Noise W: $noiseW
-                    Sentence Silence: $sentenceSilence
-                """.trimIndent()
+                val mockContent = "MOCK_ERROR: " + e.message + "\n" + Log.getStackTraceString(e)
                 file.writeText(mockContent)
                 true
             } catch (ex: Exception) {
