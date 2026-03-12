@@ -39,7 +39,7 @@ jobs:
           profile: Nexus 6
           script: |
             ./gradlew connectedCheck
-            adb pull /sdcard/Android/data/com.piperreader/files/Download/output.wav output.wav || echo "Failed to pull output.wav from emulator"
+            adb pull /sdcard/Download/output.wav output.wav || echo "Failed to pull output.wav from emulator"
 
       - name: Upload TTS Audio Artifact
         uses: actions/upload-artifact@v4

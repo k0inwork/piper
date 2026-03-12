@@ -38,7 +38,7 @@ class MainActivityTest {
 
         // Verify the file was created in the app's external files directory
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val downloadsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val outputFile = File(downloadsDir, "output.wav")
 
         // Ensure file actually exists
