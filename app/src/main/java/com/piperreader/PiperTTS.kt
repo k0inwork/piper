@@ -6,9 +6,11 @@ object PiperTTS {
 
     init {
         try {
+            System.loadLibrary("onnxruntime")
+            System.loadLibrary("piper_android")
             System.loadLibrary("piperreader")
         } catch (e: UnsatisfiedLinkError) {
-            Log.e("PiperTTS", "Native library not found, falling back to mock implementation.")
+            Log.e("PiperTTS", "Native library not found, falling back to mock implementation.", e)
         }
     }
 
