@@ -36,6 +36,7 @@ jobs:
 
           sudo apt-get update && sudo apt-get install -y python3-dev
           export ANDROID_NDK=${{ steps.setup-ndk.outputs.ndk-path }}
+          pip3 install lief
 
           # Function to build for a specific ABI
           build_abi() {
@@ -72,7 +73,13 @@ jobs:
 
             # If libpiper.so was successfully built, rename it
             if [ -f "libpiper.so" ]; then
-                cp libpiper.so libpiper_android_$ABI.so
+                # Remove VERNEED requirements for TextToPhonemes which fails on Android
+                python3 -c "
+import lief
+binary = lief.parse('libpiper.so')
+binary.remove_version_requirement('TextToPhonemes')
+binary.write('libpiper_android_$ABI.so')
+"
             else
                 echo "Compilation failed or libpiper.so not found for $ABI. Creating a dummy file."
                 echo "DUMMY LIBPIPER SO $ABI" > libpiper_android_$ABI.so
