@@ -4,12 +4,15 @@ import android.util.Log
 
 object PiperTTS {
 
+    var initError: Throwable? = null
+
     init {
         try {
             System.loadLibrary("onnxruntime")
             System.loadLibrary("piper_android")
             System.loadLibrary("piperreader")
         } catch (e: UnsatisfiedLinkError) {
+            initError = e
             Log.e("PiperTTS", "Native library not found, falling back to mock implementation.", e)
         }
     }
@@ -54,7 +57,8 @@ object PiperTTS {
             Log.w("PiperTTS", "Calling mock synthesizeToFile because native method is missing.", e)
             try {
                 val file = java.io.File(outputPath)
-                val mockContent = "MOCK_ERROR: " + e.message + "\n" + Log.getStackTraceString(e)
+                val errorToLog = initError ?: e
+                val mockContent = "MOCK_ERROR: " + errorToLog.message + "\n" + Log.getStackTraceString(errorToLog)
                 file.writeText(mockContent)
                 true
             } catch (ex: Exception) {
