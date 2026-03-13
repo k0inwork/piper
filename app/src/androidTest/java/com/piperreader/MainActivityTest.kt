@@ -38,11 +38,29 @@ class MainActivityTest {
 
         // Verify the file was created in the app's external files directory
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val downloadsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val outputFile = File(downloadsDir, "output.wav")
 
         // Ensure file actually exists
         assertTrue("Output WAV file was not created", outputFile.exists())
         assertTrue("Output WAV file is empty", outputFile.length() > 0)
+        assertTrue("Output WAV file is too small to be a valid audio file (size: ${outputFile.length()})", outputFile.length() > 300)
+
+        // Read the first few bytes to check for a valid WAV header (RIFF ... WAVEfmt)
+        // rather than the mock text file
+        val fileBytes = outputFile.readBytes()
+        if (fileBytes.size >= 12) {
+            val headerString = String(fileBytes, 0, 12, Charsets.US_ASCII)
+            assertTrue(
+                "File does not have a valid RIFF/WAVE header. Found: $headerString. It might be the mock text file.",
+                headerString.startsWith("RIFF") && headerString.contains("WAVE")
+            )
+        } else {
+            assertTrue("File is too small to even contain a header", false)
+        }
+
+        // Also explicitly ensure it doesn't contain the "MOCK WAV AUDIO DATA" text string
+        val fileContentString = String(fileBytes, Charsets.UTF_8)
+        assertTrue("File contains mock text data instead of real audio", !fileContentString.contains("MOCK WAV AUDIO DATA"))
     }
 }
